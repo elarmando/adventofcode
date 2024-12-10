@@ -25,10 +25,11 @@
   (let [st (get input :st)
         i  (get input :index)
         l (get input :length)]
-    (if (< (+ i 5) l)
-      (if (not= "mulc(" (subs st i 5))
+    (if (< (+ i 4) l)
+      (if (not= "mul(" (subs st i (+ i 4)))
         nil
-        {:st st :index (+ i 5) :length l}))))
+        (do 
+          {:st st :index (+ i 4) :length l})))))
 
 (defn valid-number-part [input] 
   (let [st (get input :st)
@@ -52,41 +53,54 @@
 (defn get-mul-str [i st]
   (let [l (count st)]
     (cond
-      (< (- l i) 5) nil
+      (< (- l i) 4) nil
       :else
       (let [world {:st st :index i :length (count st)} 
             mulc-part (valid-mulc-part world)]
         (if (not (nil? mulc-part))
           (let [num-part (valid-number-part mulc-part)]
             (if (not (nil? num-part))
-              (let [comma-part (valid-char-part num-part ",")]
-                (if (not (nil? comma-part))
-                  (let [num2-part (valid-number-part comma-part)]
-                    (if (not (nil? num2-part))
-                      (let [bracket-part (valid-char-part num2-part ")")]
-                        (if (not (nil? bracket-part))
-                          (let [index (get bracket-part :index)]
-                            {:index index 
-                             :value (subs st i (- index i))
-                             :n1 (get num-part :value)
-                             :n2 (get num2-part :value)
-                             })
+              (do
+                (let [comma-part (valid-char-part num-part ",")]
+                  (if (not (nil? comma-part))
+                    (let [num2-part (valid-number-part comma-part)]
+                      (if (not (nil? num2-part))
+                        (let [bracket-part (valid-char-part num2-part ")")]
+                          (if (not (nil? bracket-part))
+                            (let [index (get bracket-part :index)]
+                              {:index index 
+                               :value (subs st i index)
+                               :n1 (get num-part :value)
+                               :n2 (get num2-part :value)
+                               })
 
-                          nil)))))))))))))
+                            nil))))))))))))))
 
-(defn solve [st]
+(defn multiply [w]
+  (let [n1 (get w :n1)
+        n2 (get w :n2)
+        num1 (Integer/parseInt n1)
+        num2 (Integer/parseInt n2)]
+    (* num1 num2)))
+
+(defn sum-correct-mult [st]
   (let [l (count st)]
     (loop [i 0 res 0]
       (if (>= i l)
         res
         (let [mult-str (get-mul-str i st)]
           (if (nil? mult-str)
-            (recur (inc i) 0)
+            (recur (inc i) res)
             (do 
               (println mult-str)
-              (recur (get mult-str :index) 0))))))))
+              (let [mult-res (multiply mult-str)]
+                (recur (get mult-str :index) (+ res mult-res))))))))))
 
+(defn solve [file]
+   (let [content (slurp file)]
+         (sum-correct-mult content))) 
+;(println (get-mul-str 0 "mulc(1,1)")) 
+;(println (sum-correct-mult "xmul(2,4)%&mul[3,7]!@^do_not_mul(5,5)+mul(32,64]then(mul(11,8)mul(8,5))"))
 
-;(println (get-mul-str 0 "mulc(1,1)"))
-(println (solve "mulc(1,1)amulc("))
+(println (solve "input.txt"))
 
